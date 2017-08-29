@@ -83,14 +83,12 @@ select_fields(Database,Fields,Filter)->
     {Key,Data} = Filter,
     Key_pos = find_pos(Column_list,Key),
     Column_filter = build_filter(Column_list,Fields),
-%%    Values = lists:filter(get_match(Data,Key_pos,Column_list),get_database(Database)),
-%%    Values = [List || {_,_,2007} = List <- get_database(Database)],
     Values = [List || List <- get_database(Database), Data == element(Key_pos,List)],
     list_to_tuple(build_result(Column_filter,Values)).
 
 get_match(Data,Key_pos,Column_list)->
     Length = erlang:length(Column_list) - 1,
-    Filter = lists:flatten(build_list(Data,Key_pos,Length,1)),
+    Filter = build_list(Data,Key_pos,Length,1),
     list_to_tuple(Filter).
 
 build_list(Data,Key_pos,Length,Count) when Length >= Count ->
@@ -100,7 +98,7 @@ build_list(Data,Key_pos,Length,Count) when Length >= Count ->
                   _ ->
                       "_"     
               end,
-    [Element, build_list(Data,Key_pos,Length,Count+1)];
+    [Element | build_list(Data,Key_pos,Length,Count+1)];
 build_list(_,_,_,_)->
     [].
 
