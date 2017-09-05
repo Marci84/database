@@ -39,10 +39,10 @@ show_test()->
 
 
 find_pos_test()->
-    ?assertEqual(3,database_app:find_pos([a,b,c,d,e,f,g],c)).
+    ?assertEqual(3,database_app:find_position([a,b,c,d,e,f,g],c)).
 
 find_pos2_test()->    
-?assertEqual(5,database_app:find_pos([a,b,c,d,e,e,e],e)).
+?assertEqual(5,database_app:find_position([a,b,c,d,e,e,e],e)).
 
 select_test()->
     database_app:create_database(formula_one,[id,name,joining_year],id),
