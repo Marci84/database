@@ -30,7 +30,7 @@ create_database(Database_name,Fields,Key,Path)->
             file:set_cwd(Path),
             create(Database_name,Fields,Key);
         false ->
-            invalid_path
+            {error,invalid_path}
 end.
 
 
@@ -39,27 +39,27 @@ create_database(Database_name,Fields,Key) when is_list(Fields) ->
     file:set_cwd("/tmp/database/"),
     create(Database_name,Fields,Key);
 create_database(_,_,_)->
-    invalid_format.
+    {error,invalid_format}.
 
 create(Database,Fields,Key)->
     Binary = io_lib:format("~p.~n",[list_to_tuple(Fields ++ [Key])]),
     file:write_file(Database,Binary).
 
 add(Database,Fields) when is_list(Fields)->
-    Action = fun()-> check_if_key_not_exist(Database,Fields) end,
+    Action = fun()-> add_data(Database,Fields) end,
     execute_if_database_exists(Database,Action);
 add(_,_) ->
-    fields_is_not_a_list.
+    {error,fields_is_not_a_list}.
 
-check_if_key_not_exist(Database,Fields)->
+add_data(Database,Fields)->
     Column_list = get_columns(Database),
     Key_position = get_keypos(Column_list),
     New_entry_key = lists:nth(Key_position,Fields),
     case select_with_key(Database,New_entry_key) of
         false ->
             add_fields(Database,Fields);
-        _ ->
-            key_already_defined
+        true ->
+            {error,key_already_defined}
     end.
 
 add_fields(Database,Fields)->
@@ -79,7 +79,7 @@ select(Database,Fields,Filter) when is_list(Fields), is_tuple(Filter)->
     Action = fun()-> select_fields(Database,Fields,Filter) end,
     execute_if_database_exists(Database,Action);
 select(_,_,_)->
-    invalid_format.
+    {error,invalid_format}.
 
 select_fields(Database,Fields,Filter)->
     Column_list = get_columns(Database),
@@ -107,15 +107,11 @@ build_element([H|T],Values)->
     [lists:nth(H,tuple_to_list(Values))|build_element(T,Values)].
 
 show()->
-    File_list = filelib:wildcard("*"),
-    get_file_content(File_list).
+    [get_file_content(List) || List <- filelib:wildcard("*")].
 
-get_file_content([])->
-    [];
-get_file_content([H|T])->
-    {_,Content} = file:consult(H),
-    lists:flatten([list_to_atom(H),Content]) ++ get_file_content(T).
-
+get_file_content(File)->
+    {ok,Content} = file:consult(File),
+    lists:flatten([list_to_atom(File),Content]).
 
 find_position(List,Name)->
     find_position(List,Name,1).
@@ -135,15 +131,15 @@ execute_if_database_exists(Database,Action)->
         true ->
             Action();
         false ->
-            invalid_filename
+            {error,invalid_filename}
     end.
 
 get_database(Database)->
-    {_,File_content} = file:consult(Database),
+    {ok,File_content} = file:consult(Database),
     File_content.
 
 get_columns(Database)->
-    {_,File_content} = file:consult(Database),
+    {ok,File_content} = file:consult(Database),
     tuple_to_list(lists:nth(1,File_content)).
 
 get_keypos(Column_list)->
